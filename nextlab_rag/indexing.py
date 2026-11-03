@@ -809,12 +809,19 @@ def search_corpus(
     model_name: str = EMBEDDING_MODEL,
     embedder: Any | None = None,
     limit: int = 5,
+    text_query: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Search by dense vectors and BM25, then fuse ranks with RRF."""
+    """Search by dense vectors and BM25, then fuse ranks with RRF.
+
+    ``text_query`` overrides the BM25 query only. The dense query stays
+    ``question``. This lets callers expand acronyms for keyword search without
+    changing the embedding.
+    """
     if not question.strip():
         raise ValueError("question must not be empty")
     if limit < 1 or limit > 50:
         raise ValueError("limit must be between 1 and 50")
+    bm25_query = text_query.strip() if text_query and text_query.strip() else question
     root = Path(repo_root).resolve()
     storage = Path(rag_dir).resolve() if rag_dir else root / ".rag"
     with _index_lock(storage):
@@ -845,7 +852,7 @@ def search_corpus(
                         limit=candidate_limit,
                     ),
                     models.Prefetch(
-                        query=models.TextQuery(text=question),
+                        query=models.TextQuery(text=bm25_query),
                         using=TEXT_FIELD,
                         limit=candidate_limit,
                     ),

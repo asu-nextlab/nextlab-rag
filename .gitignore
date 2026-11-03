@@ -12,6 +12,7 @@ dataset/
 sources/
 history/
 research/
+eval/
 captures/
 capture-artifacts/
 RESUME.md

@@ -814,6 +814,32 @@ def test_ask_calls_configured_chat_endpoint_and_validates_citations(tmp_path: Pa
     assert "The export contains one reviewed post." in body["messages"][1]["content"]
 
 
+def test_ask_keeps_raw_answer_when_citation_validation_fails(tmp_path: Path) -> None:
+    write_export(tmp_path, fixture_chunks())
+    rag_dir = tmp_path / ".rag"
+    index_corpus(tmp_path, rag_dir=rag_dir, embedder=FakeEmbedder())
+    CompletionHandler.requests = []
+    CompletionHandler.answer = "The center opened in 2022."
+    CompletionHandler.redirect_to = None
+    server, thread, base_url = serve(CompletionHandler)
+    try:
+        result = ask(
+            "When did Indigo River open in Tempe?",
+            tmp_path,
+            rag_dir=rag_dir,
+            embedder=FakeEmbedder(),
+            chat_base_url=base_url,
+            chat_model="test-model",
+        )
+    finally:
+        stop_server(server, thread)
+
+    assert result["abstained"] is True
+    assert result["answer"] == ABSTENTION_TEXT
+    assert result["raw_answer"] == "The center opened in 2022."
+    assert result["citation_validation"]["valid"] is False
+
+
 def test_ask_uses_generator_decision_for_missing_fact_about_known_entity(tmp_path: Path) -> None:
     write_export(tmp_path, fixture_chunks())
     rag_dir = tmp_path / ".rag"
