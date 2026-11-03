@@ -272,6 +272,7 @@ def ask(
     if not hits:
         return {
             "answer": ABSTENTION_TEXT,
+            "raw_answer": None,
             "abstained": True,
             "sources": sources,
             "citation_validation": {
@@ -301,6 +302,7 @@ def ask(
     if not citation_validation["valid"]:
         return {
             "answer": ABSTENTION_TEXT,
+            "raw_answer": generated,
             "abstained": True,
             "sources": sources,
             "citation_validation": citation_validation,
@@ -308,6 +310,7 @@ def ask(
         }
     return {
         "answer": generated,
+        "raw_answer": generated,
         "abstained": generated.strip().casefold() == ABSTENTION_TEXT.casefold(),
         "sources": sources,
         "citation_validation": citation_validation,
